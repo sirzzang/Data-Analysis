@@ -59,7 +59,7 @@ def get_outlier(df, col, threshold=75):
     out_df = df[df[col] >= boundary]
     return out_df
 
-# One Variable: 
+# One Variable: countplot, distplot, ...
 
 # TwoVariables
 
@@ -87,7 +87,7 @@ def plotRanks(df, col_list, agg_func_list, ascending=False):
         ax.annotate(txt, (x[i], y[i]))    
     plt.show()
     
-# 각 범주별 수치와의 관계
+# 범주형-수치형
 def plotCatNum(df, x_list, y, plot_type, agg_func=None):
     assert len(x_list) % 2 == 0
     
@@ -102,42 +102,43 @@ def plotCatNum(df, x_list, y, plot_type, agg_func=None):
     elif plot_type == 'box':
         plot = sns.boxplot
     else:
-        plot = plot_type
         print("plot 유형 정확한지 확인")
-    
+        plot = plot_type
+        
+    # subplot으로 나타내기    
     row_num, col_num = 2, len(x_list)//2
     
     fig, axes = plt.subplots(nrows=row_num, ncols=col_num)
-    fig.set_size_inches(col_num*8, row_num*6)
+    fig.set_size_inches(col_num*4, row_num*3)
     
     for i in range(len(x_list)):
-        row, col = i // col_num, i % col_num
+        row, col = i//col_num, i%col_num
         if plot_type=='bar':
             if agg_func == 'sum':
-                sns.barplot(data=data, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=np.sum)
+                sns.barplot(data=df, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=np.sum)
             elif agg_func == 'mean':
-                sns.barplot(data=data, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=np.mean)
+                sns.barplot(data=df, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=np.mean)
             else:
                 try:
-                    sns.barplot(data=data, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=agg_func)
+                    sns.barplot(data=df, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=agg_func)
                 except:
-                    print("집계함수 확인할 것")
-                    return
+                    return "집계함수 확인할 것"
 
         elif plot_type=='box':
-            sns.boxplot(data=data, y=y, x=x_list[i], orient='v', ax=axes[row][col])
+            sns.boxplot(data=df, y=y, x=x_list[i], orient='v', ax=axes[row][col])
             agg_func = ''
     
-    fig.suptitle(f'각 범주별 {y} {agg_func}', size=24)    
+    fig.suptitle(f'각 범주별 {y} {agg_func}', size=15)
+    plt.tight_layout()
     plt.show()
 
+# 범주형-범주형
 def countCatCat(df, x, y):
     plt.figure(figsize=(12, 12))
-    sns.heatmap(data.groupby(by=x)[y].value_counts().unstack().fillna(0),
+    sns.heatmap(df.groupby(by=x)[y].value_counts().unstack().fillna(0),
                 annot=True, cmap='YlGnBu')
     plt.title(f'{y}별 {x}의 개수')
     plt.show()
-
 
 # Three Variables
 def check_multivariate(df, x, y, cat, agg_func):
