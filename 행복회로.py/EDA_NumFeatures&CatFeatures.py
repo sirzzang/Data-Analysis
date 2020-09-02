@@ -176,3 +176,20 @@ def checkSalesByColumnGroup(df, column, nrows, ascending=False):
         for i, v in zip(grps.index, grps.values):
             df[f'상위 {nrows}'][i] = v
     return df
+
+
+# 상위 n개 화살표 annotation
+def annotMaxValues(x, y, n=10, ax=None):
+    x_max_values = x[y.argsort()[-n:][::-1]]
+    y_max_values = y[x_max_values]
+    for xmax, ymax in zip(x_max_values, y_max_values):
+        # text= "x={}, y={:.3f}".format(xmax, ymax)"
+        text = xmax
+        if not ax:
+            ax = plt.gca()
+        # bboxprops = dict(boxstyle=square, pad=0.3, fc=w, ec=k, lw=0.72)
+        arrowprops = dict(arrowstyle='->', connectionstlye='angle, angleA=0, angleB=60')
+        ax.annotate(text, xy=(xmax, ymax), xycoords='data',
+                    xytext=(xmax-8, ymax), textcoords='data',
+                    arrowprops=arrowprops, #bbox=bboxprops,
+                    ha='right', va='top')
