@@ -64,6 +64,7 @@ def get_outlier(df, col, threshold=75):
 # TwoVariables
 
 # 각 피쳐 간 sum, mean 확인
+# 각 피쳐 간 sum, mean 확인
 def grouping(df, colname, agg_funcs):
     print(f"집계 기준 범주: {colname}")
     grouped_df = df.groupby(by=colname, as_index=False).agg(agg_funcs).sort_values(by=('취급액', 'mean'), ascending=False)
@@ -87,7 +88,7 @@ def plotRanks(df, col_list, agg_func_list, ascending=False):
         ax.annotate(txt, (x[i], y[i]))    
     plt.show()
     
-# 범주형-수치형
+# 각 범주별 수치와의 관계
 def plotCatNum(df, x_list, y, plot_type, agg_func=None):
     assert len(x_list) % 2 == 0
     
@@ -102,67 +103,85 @@ def plotCatNum(df, x_list, y, plot_type, agg_func=None):
     elif plot_type == 'box':
         plot = sns.boxplot
     else:
-        print("plot 유형 정확한지 확인")
         plot = plot_type
-        
-    # subplot으로 나타내기    
+        print("plot 유형 정확한지 확인")
+    
     row_num, col_num = 2, len(x_list)//2
     
     fig, axes = plt.subplots(nrows=row_num, ncols=col_num)
-    fig.set_size_inches(col_num*4, row_num*3)
+    fig.set_size_inches(col_num*8, row_num*6)
     
     for i in range(len(x_list)):
-        row, col = i//col_num, i%col_num
+        row, col = i // col_num, i % col_num
+        
         if plot_type=='bar':
             if agg_func == 'sum':
-                sns.barplot(data=df, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=np.sum)
+                sns.barplot(data=data, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=np.sum)
             elif agg_func == 'mean':
-                sns.barplot(data=df, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=np.mean)
+                sns.barplot(data=data, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=np.mean)
             else:
                 try:
-                    sns.barplot(data=df, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=agg_func)
+                    sns.barplot(data=data, y=y, x=x_list[i], orient='v', ax=axes[row][col], estimator=agg_func)
                 except:
                     return "집계함수 확인할 것"
-
+                
         elif plot_type=='box':
-            sns.boxplot(data=df, y=y, x=x_list[i], orient='v', ax=axes[row][col])
+            sns.boxplot(data=data, y=y, x=x_list[i], orient='v', ax=axes[row][col])
             agg_func = ''
     
-    fig.suptitle(f'각 범주별 {y} {agg_func}', size=15)
-    plt.tight_layout()
+    # 요일인 경우, 월화수목금토일 순서로 정렬.
+    if y == '요일':
+        locs, labels = plt.xticks()
+        plt.xticks(locs, ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'])
+    
+    fig.suptitle(f'각 범주별 {y} {agg_func}', size=24)    
     plt.show()
 
-# 범주형-범주형
+# 범주형-범주형 개수 파악
 def countCatCat(df, x, y):
-    plt.figure(figsize=(12, 12))
-    sns.heatmap(df.groupby(by=x)[y].value_counts().unstack().fillna(0),
-                annot=True, cmap='YlGnBu')
+    plt.figure(figsize=(12, 6))
+    sns.heatmap(data.groupby(by=x)[y].value_counts().unstack().fillna(0),
+                annot=True, cmap='YlGnBu', fmt='g')
     plt.title(f'{y}별 {x}의 개수')
+    
+    # 요일인 경우, 월화수목금토일 순서로 정렬.
+    if y == '요일':
+        locs, labels = plt.xticks()
+        plt.xticks(locs, ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'])
+
     plt.show()
 
 # Three Variables
+
+# 종류별 집계 후 관계 파악
 def check_multivariate(df, x, y, cat, agg_func):
     
     temp = pd.pivot_table(df, values=y, index=x, columns=cat, aggfunc=agg_func).fillna(0)
-    display(temp)
     
     # 그래프 설정        
     fig, (ax1, ax2) =plt.subplots(nrows=1, ncols=2, figsize=(16, 6))
     if agg_func == np.mean:
-        plt.suptitle(f"{x}별 {cat}별 {y}: 평균", size=18)
+        fig.suptitle(f"{x}별 {cat}별 {y}: 평균", size=18)
     elif agg_func == np.sum:
-        plt.suptitle(f"{x}별 {cat}별 {y}: 합계", size=18)
+        fig.suptitle(f"{x}별 {cat}별 {y}: 합계", size=18)
     else:
-        plt.subtitle(f"{x}별 {cat}별 {y}: {agg_func}", size=18)
+        fig.suptitle(f"{x}별 {cat}별 {y}", size=18)
     
     # 시계열 그래프
     sns.lineplot(x=x, y=y, hue=cat, data=df, estimator=agg_func, ci=None, ax=ax1)
-    ax1.legend(loc='best')
+    ax1.legend(loc='center left', ncol=1, bbox_to_anchor=(-0.3, 0.5))
     
     # 단순 관계
     sns.heatmap(temp.T, cmap='YlGnBu', ax=ax2)
+    
+    # 요일인 경우, 월화수목금토일 순서로 정렬.
+    if x == '요일':
+        ax1.set_xticks(range(0, 7))
+        ax1.set_xticklabels(['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'])
+        ax2.set_xticklabels(['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'])
+        
     plt.show()
-
+    
 # 판매량 상위, 하위
 def checkSalesByColumnGroup(df, column, nrows, ascending=False):
     temp = data.sort_values(by='판매량', ascending=ascending).head(nrows)
