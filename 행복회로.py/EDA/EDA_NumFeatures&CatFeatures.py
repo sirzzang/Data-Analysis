@@ -140,7 +140,7 @@ def plotCatNum(df, x_list, y, plot_type, agg_func=None):
 # 범주형-범주형 개수 파악
 def countCatCat(df, x, y):
     plt.figure(figsize=(12, 6))
-    sns.heatmap(data.groupby(by=x)[y].value_counts().unstack().fillna(0),
+    sns.heatmap(df.groupby(by=x)[y].value_counts().unstack().fillna(0),
                 annot=True, cmap='YlGnBu', fmt='g')
     plt.title(f'{y}별 {x}의 개수')
     
